@@ -3,6 +3,7 @@
 import inspect
 import triton
 import torch
+import time
 
 from interpreter import patch, collect_grid
 
@@ -38,8 +39,10 @@ def test(puzzle, puzzle_spec, nelem={}, B={"B0": 32}, print_log=False, device="c
     #    print(k, v)
     
     # triton_viz.trace(puzzle)[grid](*tt_args, **B, **nelem))
+    start = time.time()
     with patch():
         puzzle[grid](*tt_args, **B, **nelem)
+    duration = time.time() - start
     
     z = tt_args[-1]
     tt_args = tt_args[:-1]
@@ -47,6 +50,7 @@ def test(puzzle, puzzle_spec, nelem={}, B={"B0": 32}, print_log=False, device="c
     match = torch.allclose(z, z_, rtol=1e-3, atol=1e-3)
     match_emoji = "✅" if match else "❌"
     print(match_emoji, "Results match:", match)
+    if match: print(match_emoji, f"Kernel time: {duration} s")
 
     if not match or print_log:
         print("Launch args: ", nelem, B)
